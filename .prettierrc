@@ -1,0 +1,14 @@
+{
+  "prettier.useTabs": true,
+  "prettier.withNodeModules": true,
+  "prettier.enableDebugLogs": true,
+  "prettier.arrowParens": "avoid",
+  "prettier.requirePragma": true,
+  "prettier.insertPragma": true,
+  "prettier.singleAttributePerLine": true,
+  "prettier.endOfLine": "auto",
+  "prettier.bracketSameLine": true,
+  "prettier.printWidth": 120,
+  "prettier.tabWidth": 2,
+  "prettier.bracketSpacing": true
+}

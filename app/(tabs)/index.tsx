@@ -1,70 +1,127 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
+import {
+  Text,
+  View,
+  FlatList,
+  Pressable,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Image,
+  RefreshControl,
+} from "react-native";
+import qs from "qs";
+import { Link, useRouter } from "expo-router";
+import { Entypo } from "@expo/vector-icons";
+import config from "@/constants/config";
+import { PageData } from "@/lib/types";
+import ComicCard from "@/components/ComicCard";
+import { cn } from "@/lib/utils";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
+  const [pageData, setPageData] = useState<PageData | undefined>(undefined);
+  const [flag, setFlag] = useState(0);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-export default function HomeScreen() {
+  async function getPageData(page = 1) {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `${
+          config.REACT_NATIVE_OTTRUYEN_URL
+        }/danh-sach/truyen-moi?${qs.stringify(
+          {
+            page,
+          },
+          { encodeValuesOnly: true }
+        )}`
+      );
+      setPageData(res.data.data);
+      setFlag((prev) => prev++);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setFlag((prev) => prev + 1);
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    getPageData();
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View className="flex-1 px-3 mt-4">
+      <Text className="text-lg">Truyện mới</Text>
+      {pageData && (
+        <FlatList
+          numColumns={2}
+          contentContainerClassName="items-center flex-1"
+          data={pageData.items}
+          renderItem={(data) => <ComicCard data={data.item} />}
+          keyExtractor={(data) => `${data._id}`}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={getPageData} />
+          }
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      )}
+      <View className="my-4 justify-center items-center flex-1 flex-row">
+        <Pressable
+          className="mr-4"
+          disabled={pageData?.params.pagination.currentPage === 1}
+          onPress={() => {
+            pageData && getPageData(pageData.params.pagination.currentPage - 1);
+          }}
+        >
+          <Text
+            className={cn([
+              "font-bold",
+              pageData?.params.pagination.currentPage === 1
+                ? "text-gray-400"
+                : "text-blue-500",
+            ])}
+          >
+            Trang Trước
+          </Text>
+        </Pressable>
+        <Text className="text-blue-500 underline text-lg">
+          {pageData?.params.pagination.currentPage}
+        </Text>
+        <Pressable
+          className="ml-4"
+          onPress={() => {
+            pageData && getPageData(pageData.params.pagination.currentPage + 1);
+          }}
+          disabled={
+            !pageData
+              ? true
+              : pageData.params.pagination.currentPage ===
+                Math.ceil(
+                  pageData.params.pagination.totalItems /
+                    pageData.params.pagination.totalItemsPerPage
+                )
+          }
+        >
+          <Text
+            className={cn([
+              "font-bold ",
+              !pageData
+                ? "text-gray-500"
+                : pageData.params.pagination.currentPage ===
+                  Math.ceil(
+                    pageData.params.pagination.totalItems /
+                      pageData.params.pagination.totalItemsPerPage
+                  )
+                ? "text-gray-500"
+                : "text-blue-500",
+            ])}
+          >
+            Trang Sau
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
